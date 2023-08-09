@@ -31,7 +31,7 @@ class Keyword(Base):
 logging.basicConfig(level=logging.DEBUG)
 
 # Инициализация бота и диспетчера
-bot = Bot(token='YOUR_BOT_TOKEN')
+bot = Bot(token='6461780172:AAEABfAggnJDYVcFBsHQZJoFb-tNy2axaXY')
 dp = Dispatcher(bot)
 dp.middleware.setup(LoggingMiddleware())
 
