@@ -1,19 +1,20 @@
 from aiogram import Bot, Dispatcher, types
 from aiogram.utils import executor
-from sqlalchemy import create_engine, Column, Integer, String
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import create_engine, Column, Integer, String, MetaData
+from sqlalchemy.orm import sessionmaker, declarative_base, Session
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+import asyncio
 
 TOKEN = '6461780172:AAEABfAggnJDYVcFBsHQZJoFb-tNy2axaXY'
 bot = Bot(token=TOKEN)
 dp = Dispatcher(bot)
 
-DATABASE_URL = "postgresql://bot:bot@localhost/admin_bot"
-engine = create_engine(DATABASE_URL)
+DATABASE_URL = "postgresql://django:django@localhost/admin_bot"
+engine = create_async_engine(DATABASE_URL, echo=True)  # Используем create_async_engine для асинхронной работы
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
-
 
 class User(Base):
     __tablename__ = "keywords_users"
@@ -24,7 +25,6 @@ class User(Base):
     last_name = Column(String)
     username = Column(String)
 
-
 class Keyword(Base):
     __tablename__ = "keywords_keywords"
 
@@ -32,31 +32,21 @@ class Keyword(Base):
     message = Column(String)
     image_path = Column(String)
 
-
 Base.metadata.create_all(bind=engine)
 
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-
-def insert_user(db, user_id, first_name, last_name, username):
-    db_user = User(user_id=user_id, first_name=first_name, last_name=last_name, username=username)
-    db.add(db_user)
-    db.commit()
-    db.refresh(db_user)
-    return db_user
+async def get_db() -> AsyncSession:
+    async with SessionLocal() as session:
+        async with session.begin():
+            yield session
 
 @dp.message_handler(commands=['start'])
 async def start(message: types.Message):
     user = message.from_user
 
     async with get_db() as db:
-        db_user = insert_user(db, user.id, user.first_name, user.last_name, user.username)
+        db_user = User(user_id=user.id, first_name=user.first_name, last_name=user.last_name, username=user.username)
+        db.add(db_user)
+        await db.commit()
 
     await message.reply("Привет! Я бот. Отправь мне кодовое слово.")
 
@@ -65,7 +55,8 @@ async def handle_message(message: types.Message):
     keyword = message.text
 
     async with get_db() as db:
-        db_keyword = db.query(Keyword).filter(Keyword.keyword == keyword).first()
+        db_keyword = await db.execute(Keyword.__table__.select().where(Keyword.keyword == keyword))
+        db_keyword = await db_keyword.scalar_one_or_none()
 
     if db_keyword:
         response_message, image_path = db_keyword.message, db_keyword.image_path
