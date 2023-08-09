@@ -47,12 +47,12 @@ async def start(message: types.Message):
     user = message.from_user
 
     # Save user data to the database
-    db_user = User(user_id=user.id, first_name=user.first_name, last_name=user.last_name, username=user.username)
+    db_user = User(user_id=user.id, first_name=user.first_name, last_name=user.last_name or "", username=user.username)
     pool = await open_db()
     async with pool.acquire() as connection:
         await connection.execute(
             "INSERT INTO keywords_users (user_id, first_name, last_name, username) VALUES ($1, $2, $3, $4)",
-            user.id, user.first_name, user.last_name, user.username)
+            user.id, user.first_name, db_user.last_name, user.username)
 
     await message.reply("Hello! I'm a bot. Send me a keyword.")
 
