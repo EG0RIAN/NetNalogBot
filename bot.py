@@ -10,8 +10,8 @@ DATABASE_URL = 'postgresql://django:django@localhost/admin_bot'
 engine = create_engine(DATABASE_URL)
 Session = sessionmaker(bind=engine)
 Base = declarative_base()
-logging.basicConfig(level=logging.DEBUG)
-# Описание модели таблицы keywords_user
+
+# Описание модели таблицы keywords_users
 class User(Base):
     __tablename__ = 'keywords_users'
     id = Column(Integer, Sequence('user_id_seq'), primary_key=True)
@@ -28,10 +28,10 @@ class Keyword(Base):
     text = Column(String)
 
 # Инициализация логгера
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 
 # Инициализация бота и диспетчера
-bot = Bot(token='6461780172:AAEABfAggnJDYVcFBsHQZJoFb-tNy2axaXY')
+bot = Bot(token='YOUR_BOT_TOKEN')
 dp = Dispatcher(bot)
 dp.middleware.setup(LoggingMiddleware())
 
@@ -54,23 +54,4 @@ async def cmd_start(message: types.Message):
 
     session.close()
 
-    await message.reply(f"Привет, {first_name}! Добро пожаловать!")
-
-# Обработка текстовых сообщений
-@dp.message_handler(lambda message: message.text)
-async def handle_text(message: types.Message):
-    keyword = message.text
-
-    session = Session()
-    result = session.query(Keyword).filter_by(keyword=keyword).first()
-
-    if result:
-        await bot.send_photo(message.chat.id, result.photo_url, caption=result.text)
-    else:
-        await message.reply("К сожалению, по данному ключевому слову нет информации.")
-
-    session.close()
-
-if __name__ == '__main__':
-    from aiogram import executor
-    executor.start_polling(dp, skip_updates=True)
+    await message.reply(f"Привет, {first_name}! Д
