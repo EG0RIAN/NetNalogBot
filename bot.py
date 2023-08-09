@@ -6,7 +6,10 @@ TOKEN = '6461780172:AAEABfAggnJDYVcFBsHQZJoFb-tNy2axaXY'
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher(bot)
-conn = sqlite3.connect('admin_bot/db.sqlite3')
+conn = sqlite3.connect('admin_bot/db.sqlite3', isolation_level=None,
+                       check_same_thread=False)
+conn.execute('PRAGMA journal_mode=WAL')
+
 cursor = conn.cursor()
 
 
