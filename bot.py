@@ -54,4 +54,23 @@ async def cmd_start(message: types.Message):
 
     session.close()
 
-    await message.reply(f"Привет, {first_name}! Д
+    await message.reply(f"Привет, {first_name}! Добро пожаловать!")
+
+# Обработка текстовых сообщений
+@dp.message_handler(lambda message: message.text)
+async def handle_text(message: types.Message):
+    keyword = message.text
+
+    session = Session()
+    result = session.query(Keyword).filter_by(keyword=keyword).first()
+
+    if result:
+        await bot.send_photo(message.chat.id, result.photo_url, caption=result.text)
+    else:
+        await message.reply("К сожалению, по данному ключевому слову нет информации.")
+
+    session.close()
+
+if __name__ == '__main__':
+    from aiogram import executor
+    executor.start_polling(dp, skip_updates=True)
