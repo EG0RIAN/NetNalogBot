@@ -1,59 +1,76 @@
-import asyncio
+import logging
 from aiogram import Bot, Dispatcher, types
+from aiogram.contrib.middlewares.logging import LoggingMiddleware
 from aiogram.utils import executor
-import asyncpg
-from sqlalchemy import create_engine, Column, Integer, String
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy import create_engine, Column, Integer, String, Sequence
+from sqlalchemy.orm import declarative_base, sessionmaker
 
-# Замените на свой токен
-TOKEN = '6461780172:AAEABfAggnJDYVcFBsHQZJoFb-tNy2axaXY'
-
-bot = Bot(token=TOKEN)
-dp = Dispatcher(bot)
-
-# Создание подключения к базе данных с помощью asyncpg
-async def open_db():
-    return await asyncpg.create_pool(database="admin_bot", user="bot", password="bot", host="localhost")
-
-async def close_db(pool):
-    await pool.close()
-
-# SQLAlchemy
-DATABASE_URL = "postgresql://django:django@localhost/admin_bot"
+# Настройки для подключения к базе данных
+DATABASE_URL = 'postgresql://django:django@localhost/admin_bot'
 engine = create_engine(DATABASE_URL)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+Session = sessionmaker(bind=engine)
 Base = declarative_base()
 
+# Описание модели таблицы keywords_user
+class User(Base):
+    __tablename__ = 'keywords_users'
+    id = Column(Integer, Sequence('user_id_seq'), primary_key=True)
+    user_id = Column(Integer, unique=True)
+    first_name = Column(String)
+    last_name = Column(String)
+    username = Column(String)
+
+# Описание модели таблицы keywords_keywords
 class Keyword(Base):
-    __tablename__ = "keywords_keywords"
+    __tablename__ = 'keywords_keywords'
+    keyword = Column(String, primary_key=True)
+    photo_url = Column(String)
+    text = Column(String)
 
-    keyword = Column(String, primary_key=True, index=True)
-    message = Column(String)
-    image_path = Column(String)
+# Инициализация логгера
+logging.basicConfig(level=logging.INFO)
 
-Base.metadata.create_all(bind=engine)
+# Инициализация бота и диспетчера
+bot = Bot(token='6461780172:AAEABfAggnJDYVcFBsHQZJoFb-tNy2axaXY')
+dp = Dispatcher(bot)
+dp.middleware.setup(LoggingMiddleware())
 
-def get_db():
-    db = SessionLocal()
-    return db
+# Обработка команды /start
+@dp.message_handler(commands=['start'])
+async def cmd_start(message: types.Message):
+    user = message.from_user
+    user_id = user.id
+    first_name = user.first_name
+    last_name = user.last_name
+    username = user.username
 
-@dp.message_handler(content_types=types.ContentTypes.TEXT)
-async def handle_message(message: types.Message):
+    session = Session()
+    existing_user = session.query(User).filter_by(user_id=user_id).first()
+
+    if not existing_user:
+        new_user = User(user_id=user_id, first_name=first_name, last_name=last_name, username=username)
+        session.add(new_user)
+        session.commit()
+
+    session.close()
+
+    await message.reply(f"Привет, {first_name}! Добро пожаловать!")
+
+# Обработка текстовых сообщений
+@dp.message_handler(lambda message: message.text)
+async def handle_text(message: types.Message):
     keyword = message.text
 
-    db = get_db()
-    db_keyword = db.query(Keyword).filter(Keyword.keyword == keyword).first()
+    session = Session()
+    result = session.query(Keyword).filter_by(keyword=keyword).first()
 
-    if db_keyword:
-        response_message, image_path = db_keyword.message, db_keyword.image_path
-        with open(image_path, 'rb') as photo:
-            await message.reply_photo(photo, caption=response_message)
+    if result:
+        await bot.send_photo(message.chat.id, result.photo_url, caption=result.text)
     else:
-        await message.reply("Ключевое слово не найдено в базе данных.")
+        await message.reply("К сожалению, по данному ключевому слову нет информации.")
 
-    db.close()
+    session.close()
 
 if __name__ == '__main__':
-    asyncio.run(open_db())  # Открываем подключение к базе данных
+    from aiogram import executor
     executor.start_polling(dp, skip_updates=True)
