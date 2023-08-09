@@ -1,44 +1,49 @@
-import sqlite3
+import asyncpg
 from aiogram import Bot, Dispatcher, types
 from aiogram.utils import executor
 
 TOKEN = '6461780172:AAEABfAggnJDYVcFBsHQZJoFb-tNy2axaXY'
+DATABASE_URL = 'postgresql://bot:bot@localhost/admin_bot'
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher(bot)
-conn = sqlite3.connect('admin_bot/db.sqlite3', isolation_level=None,
-                       check_same_thread=False)
-conn.execute('PRAGMA journal_mode=WAL')
-
-cursor = conn.cursor()
 
 
-@dp.message_handler(commands=['start'])
-async def start(message: types.Message):
+async def setup_database():
+    return await asyncpg.create_pool(DATABASE_URL)
+
+
+async def insert_user(pool, user):
+    async with pool.acquire() as conn:
+        await conn.execute(
+            "INSERT INTO keywords_users (user_id, first_name, last_name, username) VALUES ($1, $2, $3, $4)",
+            user.id, user.first_name, user.last_name or '', user.username
+        )
+
+
+async def get_response_and_image(pool, keyword):
+    async with pool.acquire() as conn:
+        result = await conn.fetchrow(
+            "SELECT message, image_path FROM keywords_keywords WHERE keywords=$1",
+            keyword
+        )
+        return result
+
+
+async def on_start(message: types.Message):
     user = message.from_user
+    pool = message.bot.get('db_pool')
 
-    # Сохранение данных пользователя в базу данных
-    first_name = user.first_name
-    last_name = user.last_name if user.last_name else "" 
-    username = user.username
-
-    cursor.execute(
-        "INSERT INTO keywords_users (user_id, first_name, last_name, username) VALUES (?, ?, ?, ?)",
-                (user.id, first_name, last_name, username))
-    conn.commit()
+    await insert_user(pool, user)
 
     await message.reply("Привет! Я бот. Отправь мне кодовое слово.")
 
 
-@dp.message_handler(content_types=types.ContentTypes.TEXT)
 async def handle_message(message: types.Message):
     keyword = message.text
+    pool = message.bot.get('db_pool')
 
-    # Поиск сообщения и пути к изображению по ключевому слову в базе данных
-    cursor.execute(
-        "SELECT message, image_path FROM keywords_keywords WHERE keywords=?",
-        (keyword,))
-    result = cursor.fetchone()
+    result = await get_response_and_image(pool, keyword)
 
     if result:
         response_message, image_path = result
@@ -47,4 +52,16 @@ async def handle_message(message: types.Message):
     else:
         await message.reply("Кодовое слово не найдено.")
 
-executor.start_polling(dp, skip_updates=True)
+
+async def on_startup(dp):
+    await bot.send_message(chat_id=739247122, text="Бот запущен")
+
+if __name__ == '__main__':
+    loop = asyncio.get_event_loop()
+    pool = loop.run_until_complete(setup_database())
+
+    dp.register_message_handler(start, commands=['start'])
+    dp.register_message_handler(
+        handle_message, content_types=types.ContentTypes.TEXT)
+
+    executor.start_polling(dp, skip_updates=True)
