@@ -46,7 +46,7 @@ Base.metadata.create_all(bind=engine)
 async def start(message: types.Message):
     user = message.from_user
 
-    # Save user data to the database
+    # Сохранение данных пользователя в базе данных
     db_user = User(user_id=user.id, first_name=user.first_name, last_name=user.last_name or "", username=user.username)
     pool = await open_db()
     async with pool.acquire() as connection:
@@ -54,7 +54,7 @@ async def start(message: types.Message):
             "INSERT INTO keywords_users (user_id, first_name, last_name, username) VALUES ($1, $2, $3, $4)",
             user.id, user.first_name, db_user.last_name, user.username)
 
-    await message.reply("Hello! I'm a bot. Send me a keyword.")
+    await message.reply("Привет! Я бот. Отправь мне ключевое слово.")
 
 # Modify other handler functions similarly...
 
