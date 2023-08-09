@@ -42,16 +42,17 @@ Base.metadata.create_all(bind=engine)
 
 # Handler functions
 
+
 @dp.message_handler(commands=['start'])
 async def start(message: types.Message):
     user = message.from_user
 
-    # Сохранение данных пользователя в базе данных
+    # Сохранение данных пользователя в базе данных (игнорируем дубликаты)
     db_user = User(user_id=user.id, first_name=user.first_name, last_name=user.last_name or "", username=user.username)
     pool = await open_db()
     async with pool.acquire() as connection:
         await connection.execute(
-            "INSERT INTO keywords_users (user_id, first_name, last_name, username) VALUES ($1, $2, $3, $4)",
+            "INSERT INTO keywords_users (user_id, first_name, last_name, username) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING",
             user.id, user.first_name, db_user.last_name, user.username)
 
     await message.reply("Привет! Я бот. Отправь мне ключевое слово.")
