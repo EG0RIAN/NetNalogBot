@@ -59,5 +59,22 @@ async def start(message: types.Message):
 
 # Modify other handler functions similarly...
 
+
+@dp.message_handler(content_types=types.ContentTypes.TEXT)
+async def handle_message(message: types.Message):
+    keyword = message.text
+
+    db = get_db()
+    db_keyword = db.query(Keyword).filter(Keyword.keyword == keyword).first()
+
+    if db_keyword:
+        response_message, image_path = db_keyword.message, db_keyword.image_path
+        with open(image_path, 'rb') as photo:
+            await message.reply_photo(photo, caption=response_message)
+    else:
+        await message.reply("Ключевое слово не найдено в базе данных.")
+
+    db.close()
+
 if __name__ == '__main__':
     executor.start_polling(dp, skip_updates=True)
