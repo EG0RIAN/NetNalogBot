@@ -45,7 +45,12 @@ async def start(message: types.Message):
 
     # Save user data to the database
     session = SessionLocal()
-    new_user = User(user_id=user.id, first_name=user.first_name, last_name=user.last_name, username=user.username)
+    new_user = User(
+        user_id=user.id,
+        first_name=user.first_name,
+        last_name=user.last_name if user.last_name else "",
+        username=user.username
+    )
     session.add(new_user)
     session.commit()
     session.close()
