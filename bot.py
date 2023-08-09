@@ -8,6 +8,7 @@ TOKEN = '6461780172:AAEABfAggnJDYVcFBsHQZJoFb-tNy2axaXY'
 bot = Bot(token=TOKEN)
 dp = Dispatcher(bot)
 
+# Define your SQLAlchemy model
 
 from sqlalchemy.ext.declarative import declarative_base
 
