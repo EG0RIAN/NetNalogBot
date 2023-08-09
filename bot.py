@@ -10,7 +10,7 @@ DATABASE_URL = 'postgresql://django:django@localhost/admin_bot'
 engine = create_engine(DATABASE_URL)
 Session = sessionmaker(bind=engine)
 Base = declarative_base()
-
+logging.basicConfig(level=logging.DEBUG)
 # Описание модели таблицы keywords_user
 class User(Base):
     __tablename__ = 'keywords_users'
