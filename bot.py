@@ -22,7 +22,7 @@ dp = Dispatcher(bot)
 dp.middleware.setup(LoggingMiddleware())
 
 # Configure Django settings
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'admin_bot/media')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', '/admin_bot/media')
 import django
 django.setup()
 from your_django_app.models import Keyword
