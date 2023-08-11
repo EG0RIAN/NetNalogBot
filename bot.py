@@ -20,17 +20,13 @@ bot = Bot(token='6461780172:AAEABfAggnJDYVcFBsHQZJoFb-tNy2axaXY')
 dp = Dispatcher(bot)
 dp.middleware.setup(LoggingMiddleware())
 
-# Create a connection to the MySQL database
-conn = mysql.connector.connect(**DB_CONFIG)
-cursor = conn.cursor()
-
 # Handlers
 @dp.message_handler(commands=['start'])
 async def start(message: types.Message):
     user_id = message.from_user.id
-    first_name = message.from_user.first_name or ' '
+    first_name = message.from_user.first_name
     last_name = message.from_user.last_name or ' '
-    username = message.from_user.username
+    username = message.from_user.username or ' '
     
     # Check if the user is already in the database
     cursor.execute("SELECT user_id FROM keywords_users WHERE user_id = %s", (user_id,))
@@ -47,6 +43,10 @@ async def start(message: types.Message):
 @dp.message_handler(lambda message: not message.text.startswith('/'))
 async def handle_keyword(message: types.Message):
     keyword = message.text
+    
+    # Create a connection to the MySQL database
+    conn = mysql.connector.connect(**DB_CONFIG)
+    cursor = conn.cursor()
     
     # Find the keyword in the database
     cursor.execute("SELECT * FROM keywords_keywords WHERE keyword = %s", (keyword,))
@@ -65,6 +65,10 @@ async def handle_keyword(message: types.Message):
             await message.reply(image_caption)
     else:
         await message.reply("Ключевое слово не найдено.")
+    
+    # Close the database connection
+    cursor.close()
+    conn.close()
 
 # Start the bot
 if __name__ == '__main__':
