@@ -24,7 +24,7 @@ dp.middleware.setup(LoggingMiddleware())
 @dp.message_handler(commands=['start'])
 async def start(message: types.Message):
     user_id = message.from_user.id
-    first_name = message.from_user.first_name or ' '
+    first_name = message.from_user.first_name
     last_name = message.from_user.last_name or ' '
     username = message.from_user.username or ' '
     
