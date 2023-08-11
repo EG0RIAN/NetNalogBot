@@ -21,12 +21,6 @@ bot = Bot(token='6461780172:AAEABfAggnJDYVcFBsHQZJoFb-tNy2axaXY')
 dp = Dispatcher(bot)
 dp.middleware.setup(LoggingMiddleware())
 
-# Configure Django settings
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', '/admin_bot/media')
-import django
-django.setup()
-from your_django_app.models import Keyword
-
 # Handlers
 @dp.message_handler(commands=['start'])
 async def start(message: types.Message):
@@ -74,21 +68,17 @@ async def handle_keyword(message: types.Message):
             image_caption = response_message
             
             if image_path and image_path.strip() != '':
-                image_path = os.path.join('your_django_media_folder', image_path)
+                image_path = os.path.join('admin_bot', 'media', image_path)
                 if os.path.exists(image_path):
                     # Send a message with a photo if the image_path is provided
                     with open(image_path, 'rb') as photo:
                         await bot.send_photo(message.chat.id, photo, caption=image_caption)
-                else:
-                    await message.reply("Файл изображения не найден.")
             elif file_path and file_path.strip() != '':
-                file_path = os.path.join('your_django_media_folder', file_path)
+                file_path = os.path.join('admin_bot', 'media', file_path)
                 if os.path.exists(file_path):
                     # Send a message with a file if the file_path is provided
                     with open(file_path, 'rb') as file:
                         await bot.send_document(message.chat.id, file)
-                else:
-                    await message.reply("Файл не найден.")
             else:
                 # Send a message without a photo or file
                 await message.reply(image_caption)
