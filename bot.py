@@ -78,7 +78,7 @@ async def handle_keyword(message: types.Message):
                 if os.path.exists(file_path):
                     # Send a message with a file if the file_path is provided
                     with open(file_path, 'rb') as file:
-                        await bot.send_document(message.chat.id, file)
+                        await bot.send_document(message.chat.id, file, caption=image_caption)
             else:
                 # Send a message without a photo or file
                 await message.reply(image_caption)
