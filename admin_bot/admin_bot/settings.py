@@ -76,14 +76,15 @@ WSGI_APPLICATION = 'admin_bot.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
+        'ENGINE': 'django.db.backends.mysql',
         'NAME': 'admin_bot',
         'USER': 'django',
-        'PASSWORD': 'django',
-        'HOST': 'localhost',  # Или адрес вашего сервера PostgreSQL
-        'PORT': '5432',       # Порт, на котором запущен PostgreSQL
+        'PASSWORD': 'M2z;8TxQ)Kv9',
+        'HOST': 'localhost',  # Или адрес вашего MySQL-сервера
+        'PORT': '3306',       # Порт MySQL (обычно 3306)
     }
 }
+
 
 
 # Password validation

@@ -1,75 +1,64 @@
 import logging
+import mysql.connector
 from aiogram import Bot, Dispatcher, types
 from aiogram.contrib.middlewares.logging import LoggingMiddleware
 from aiogram.utils import executor
-from sqlalchemy import create_engine, Column, Integer, String, Sequence
-from sqlalchemy.orm import declarative_base, sessionmaker
 
-# Настройки для подключения к базе данных
-DATABASE_URL = 'postgresql://django:django@localhost/admin_bot'
-engine = create_engine(DATABASE_URL)
-Session = sessionmaker(bind=engine)
-Base = declarative_base()
+# Your Telegram Bot API token
+API_TOKEN = '6461780172:AAEABfAggnJDYVcFBsHQZJoFb-tNy2axaXY'
 
-# Описание модели таблицы keywords_user
-class User(Base):
-    __tablename__ = 'keywords_users'
-    id = Column(Integer, Sequence('user_id_seq'), primary_key=True)
-    user_id = Column(Integer, unique=True)
-    first_name = Column(String)
-    last_name = Column(String)
-    username = Column(String)
+# Your MySQL database configuration
+DB_CONFIG = {
+    'user': 'bot',
+    'password': ')5+,h,X-J5FL',
+    'host': 'localhost',
+    'database': 'admin_bot',
+}
 
-# Описание модели таблицы keywords_keywords
-class Keyword(Base):
-    __tablename__ = 'keywords_keywords'
-    keyword = Column(String, primary_key=True)
-    photo_url = Column(String)
-    text = Column(String)
-
-# Инициализация логгера
 logging.basicConfig(level=logging.INFO)
 
-# Инициализация бота и диспетчера
-bot = Bot(token='6461780172:AAEABfAggnJDYVcFBsHQZJoFb-tNy2axaXY')
+bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot)
-dp.middleware.setup(LoggingMiddleware())
+db_connection = mysql.connector.connect(**DB_CONFIG)
+db_cursor = db_connection.cursor()
 
-# Обработка команды /start
+# Handler for the /start command
 @dp.message_handler(commands=['start'])
-async def cmd_start(message: types.Message):
-    user = message.from_user
-    user_id = user.id
-    first_name = user.first_name
-    last_name = user.last_name
-    username = user.username
+async def start(message: types.Message):
+    user_id = message.from_user.id
+    first_name = message.from_user.first_name
+    last_name = message.from_user.last_name
+    username = message.from_user.username
 
-    session = Session()
-    existing_user = session.query(User).filter_by(user_id=user_id).first()
+    # Check if the user already exists in the database
+    db_cursor.execute("SELECT * FROM keywords_users WHERE user_id = %s", (user_id,))
+    user_exists = db_cursor.fetchone()
 
-    if not existing_user:
-        new_user = User(user_id=user_id, first_name=first_name, last_name=last_name, username=username)
-        session.add(new_user)
-        session.commit()
+    if not user_exists:
+        # Insert the user into the database
+        db_cursor.execute(
+            "INSERT INTO keywords_users (user_id, first_name, last_name, username) VALUES (%s, %s, %s, %s)",
+            (user_id, first_name, last_name or '', username)
+        )
+        db_connection.commit()
 
-    session.close()
+    await message.answer("Привет! Это бот!")
 
-    await message.reply(f"Привет, {first_name}! Добро пожаловать!")
-
-# Обработка текстовых сообщений
-@dp.message_handler(lambda message: message.text)
+# Handler for any other text message
+@dp.message_handler(content_types=types.ContentTypes.TEXT)
 async def handle_text(message: types.Message):
-    keyword = message.text
+    keyword = message.text.strip()
 
-    session = Session()
-    result = session.query(Keyword).filter_by(keyword=keyword).first()
+    # Check if the keyword exists in the database
+    db_cursor.execute("SELECT * FROM keywords_keywords WHERE keyword = %s", (keyword,))
+    keyword_data = db_cursor.fetchone()
 
-    if result:
-        await bot.send_photo(message.chat.id, result.photo_url, caption=result.text)
+    if keyword_data:
+        _, _, response_message, image_path = keyword_data
+        with open(image_path, 'rb') as photo:
+            await message.answer_photo(photo, caption=response_message)
     else:
-        await message.reply("К сожалению, по данному ключевому слову нет информации.")
-
-    session.close()
+        await message.answer("Keyword not found.")
 
 if __name__ == '__main__':
     from aiogram import executor
