@@ -16,6 +16,7 @@ class Keywords(models.Model):
     verbose_name = "Тригеры"
     keyword = models.CharField(max_length=50)
     message = models.TextField(max_length=4096)
+    file_path = models.FileField(upload_to='files/', blank=True, null=True)
     image_path = models.ImageField(upload_to='images/', blank=True, null=True)
 
     def __str__(self):
