@@ -22,7 +22,7 @@ dp = Dispatcher(bot)
 dp.middleware.setup(LoggingMiddleware())
 
 # Configure Django settings
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'admin_bot/media/')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'admin_bot/media')
 import django
 django.setup()
 from your_django_app.models import Keyword
@@ -31,7 +31,7 @@ from your_django_app.models import Keyword
 @dp.message_handler(commands=['start'])
 async def start(message: types.Message):
     user_id = message.from_user.id
-    first_name = message.from_user.first_name
+    first_name = message.from_user.first_name or ' '
     last_name = message.from_user.last_name or ' '
     username = message.from_user.username or ' '
     
