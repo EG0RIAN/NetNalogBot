@@ -82,6 +82,9 @@ DATABASES = {
         'PASSWORD': 'M2z;8TxQ)Kv9',
         'HOST': 'localhost',  # Или адрес вашего MySQL-сервера
         'PORT': '3306',       # Порт MySQL (обычно 3306)
+        'OPTIONS': {
+            'unix_socket': '/var/run/mysqld/mysql-connector-python.sock',  # Укажите путь к сокету, если он у вас есть
+        },
     }
 }
 
