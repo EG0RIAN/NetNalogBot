@@ -41,7 +41,7 @@ async def start(message: types.Message):
         if not result:
             # Insert the user into the database
             cursor.execute("INSERT INTO keywords_users (user_id, first_name, last_name, username) VALUES (%s, %s, %s, %s)",
-                           (user_id, first_name, last_name, username))
+                        (user_id, first_name, last_name, username))
             conn.commit()
         
         await message.reply("Привет! Это бот!")
