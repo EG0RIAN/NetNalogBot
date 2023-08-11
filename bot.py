@@ -22,29 +22,7 @@ dp = Dispatcher(bot)
 db_connection = mysql.connector.connect(**DB_CONFIG)
 db_cursor = db_connection.cursor()
 
-# Handler for the /start command
-@dp.message_handler(commands=['start'])
-async def start(message: types.Message):
-    user_id = message.from_user.id
-    first_name = message.from_user.first_name
-    last_name = message.from_user.last_name
-    username = message.from_user.username
-
-    # Check if the user already exists in the database
-    db_cursor.execute("SELECT * FROM keywords_users WHERE user_id = %s", (user_id,))
-    user_exists = db_cursor.fetchone()
-
-    if not user_exists:
-        # Insert the user into the database
-        db_cursor.execute(
-            "INSERT INTO keywords_users (user_id, first_name, last_name, username) VALUES (%s, %s, %s, %s)",
-            (user_id, first_name, last_name or '', username)
-        )
-        db_connection.commit()
-
-    await message.answer("Привет! Это бот!")
-
-# Handler for any other text message
+# Handler for any text message
 @dp.message_handler(content_types=types.ContentTypes.TEXT)
 async def handle_text(message: types.Message):
     keyword = message.text.strip()
@@ -56,7 +34,8 @@ async def handle_text(message: types.Message):
     if keyword_data:
         _, _, response_message, image_path = keyword_data
         with open(image_path, 'rb') as photo:
-            await message.answer_photo(photo, caption=response_message)
+            caption = response_message if response_message else None
+            await message.answer_photo(photo, caption=caption)
     else:
         await message.answer("Keyword not found.")
 
