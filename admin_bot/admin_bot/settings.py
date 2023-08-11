@@ -76,7 +76,7 @@ WSGI_APPLICATION = 'admin_bot.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
+        'ENGINE': 'mysql.connector.django',
         'NAME': 'admin_bot',
         'USER': 'django',
         'PASSWORD': 'M2z;8TxQ)Kv9',
