@@ -63,15 +63,19 @@ async def handle_keyword(message: types.Message):
         result = cursor.fetchone()
         
         if result:
-            keyword_id, _, response_message, image_path = result
+            keyword_id, _, response_message, image_path, file_path = result
             image_caption = response_message
             
-            if image_path:
-                # Send a message with a photo
+            if image_path and image_path.strip() != '':
+                # Send a message with a photo if the image_path is provided
                 with open(image_path, 'rb') as photo:
-                    await message.reply_photo(photo, caption=image_caption)
+                    await bot.send_photo(message.chat.id, photo, caption=image_caption)
+            elif file_path and file_path.strip() != '':
+                # Send a message with a file if the file_path is provided
+                with open(file_path, 'rb') as file:
+                    await bot.send_document(message.chat.id, file)
             else:
-                # Send a message without a photo
+                # Send a message without a photo or file
                 await message.reply(image_caption)
         else:
             await message.reply("Ключевое слово не найдено.")
