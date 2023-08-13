@@ -37,14 +37,18 @@ async def start(message: types.Message):
         # Check if the user is already in the database
         cursor.execute("SELECT user_id FROM keywords_users WHERE user_id = %s", (user_id,))
         result = cursor.fetchone()
-        
+
         if not result:
             # Insert the user into the database
             cursor.execute("INSERT INTO keywords_users (user_id, first_name, last_name, username) VALUES (%s, %s, %s, %s)",
                         (user_id, first_name, last_name, username))
             conn.commit()
-        
-        await message.reply("Привет! Это бот!")
+
+        await message.reply("""
+🤖 Вас приветствует бот компании NETNALOG!
+
+Чтобы получить подарок, отправьте мне кодовое слово «подарок» 🎁
+""")
     finally:
         # Close the database connection
         cursor.close()
@@ -83,7 +87,8 @@ async def handle_keyword(message: types.Message):
                 # Send a message without a photo or file
                 await message.reply(image_caption)
         else:
-            await message.reply("Ключевое слово не найдено.")
+            await message.reply(
+                "Кодовое слово введено неверно. Попробуйте еще раз ☹️")
     finally:
         # Close the database connection
         cursor.close()
